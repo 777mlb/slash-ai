@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Slash AI — Options</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; }
+      .row { display: flex; gap: 12px; align-items: center; }
+      input { width: 420px; padding: 10px; border: 1px solid #d0d0d0; border-radius: 8px; }
+      button { padding: 10px 14px; border-radius: 8px; border: 1px solid #d0d0d0; background: #fff; cursor: pointer; }
+      .msg { margin-top: 12px; color: #0a0; }
+    </style>
+  </head>
+  <body>
+    <h1>Slash AI</h1>
+    <p>Paste your OpenAI API key. Stored in Chrome sync storage.</p>
+    <div class="row">
+      <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+      <button id="save">Save</button>
+    </div>
+    <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    <script src="options.js"></script>
+  </body>
+</html>

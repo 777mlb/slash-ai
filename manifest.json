@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Slash AI",
+  "version": "0.2.0",
+  "description": "Type /ai to open a tiny prompt, send to AI, and insert the result at your cursor (supports Gmail compose).",
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.openai.com/*"],
+  "background": { "service_worker": "background.js" },
+  "options_page": "options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["contentScript.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
