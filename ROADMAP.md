@@ -1,8 +1,23 @@
 # Slash AI Roadmap
 
+## 🎯 Top Priority
+
+### Context-Aware Prompts
+- **Page Context Integration**: Ability to include page content as background information
+- Automatically pull relevant context from the current page/selection
+- Toggle option to include/exclude context per prompt
+
+### Saved Prompts System
+- **Custom Prompt Library**: User-created reusable prompts
+- Quick access via `/ai /sales-email` syntax
+- Categories and organization for prompt management
+
 ## 🐛 Known Bugs
 
-
+### Notion Overlay Positioning
+- Core functionality works (text insertion, slash commands)
+- Modal overlay appears in top-left corner instead of near cursor
+- Need to fix overlay positioning for Notion's contentEditable structure
 
 ## 🚀 Feature Requests
 
@@ -19,21 +34,12 @@
 
 ### Functionality
 
-#### Context-Aware Prompts
-- **Page Context Integration**: Ability to include page content as background information
-- Automatically pull relevant context from the current page/selection
-- Toggle option to include/exclude context per prompt
 
 #### Model Selection
 - Allow users to toggle between different AI models
 - Support for different OpenAI models (GPT-4, GPT-4-turbo, etc.)
 - Model selection UI in overlay or options page
 
-#### Notion Support
-- **Rich Text Editor Compatibility**: Full support for Notion's contentEditable implementation
-- Handle Notion's complex DOM structure and block-based editing
-- Proper text insertion that respects Notion's formatting and block boundaries
-- Test across different Notion block types (text, headings, lists, etc.)
 
 #### Text Blaze-Style Shortcuts
 - Non-AI shortcuts for common text expansions
@@ -46,10 +52,6 @@
 - Chat interface within the overlay for back-and-forth
 - Final "Insert" button to place refined response
 
-#### Saved Prompts System
-- **Custom Prompt Library**: User-created reusable prompts
-- Quick access via `/ai /sales-email` syntax
-- Categories and organization for prompt management
 
 #### Team Prompt Sharing
 - **Shared Prompt Libraries**: Company/team-wide prompt collections
@@ -65,17 +67,15 @@
 ## Priority Levels
 
 ### High Priority
-1. ~~Fix LinkedIn text insertion bug~~ ✅ FIXED
-2. Fix SuperHuman compatibility
-3. Dark mode styling support
+1. Dark mode styling support
+2. Fix Notion overlay positioning
 
 ### Medium Priority
 1. Enhanced visual indicators for shortcuts
-2. Notion support
-3. Page context integration
-4. Model selection
+2. Model selection
+3. Text Blaze-style shortcuts
 
 ### Future/Research
 1. Conversation mode
-2. Saved prompts system
-3. Team sharing and versioning features
+2. Team prompt sharing
+3. Prompt versioning features
