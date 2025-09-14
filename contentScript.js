@@ -9,8 +9,14 @@
     mode: null,          // "input" | "ce"
     overlay: null,
     ceRoot: null,        // contentEditable root
-    bookmarkId: null     // id for insertion point in CE
+    bookmarkId: null,    // id for insertion point in CE
+    showCommandDropdown: false,
+    selectedCommandIndex: 0
   };
+
+  const SLASH_COMMANDS = [
+    { command: '/date', description: 'Insert current date' }
+  ];
 
   // ---------- Utils ----------
   function isSimpleEditable(el) {
@@ -41,13 +47,48 @@
 
   function overlayHTML(text, subtle=false) {
     const title = subtle ? "slash AI" : `slash AI — type your prompt, press ${isMac ? "⌘↵" : "Ctrl+Enter"}`;
+    let dropdownHTML = "";
+
+    if (state.showCommandDropdown) {
+      const filteredCommands = getFilteredCommands(text);
+      if (filteredCommands.length > 0) {
+        dropdownHTML = `
+          <div class="slashai-dropdown">
+            ${filteredCommands.map((cmd, index) => `
+              <div class="slashai-dropdown-item ${index === state.selectedCommandIndex ? 'selected' : ''}" data-command="${cmd.command}">
+                <span class="command">${cmd.command}</span>
+                <span class="description">${cmd.description}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+    }
+
     return `
       <div class="slashai-card">
         <div class="slashai-title">${title}</div>
-        <div class="slashai-body">${escapeHtml(text || "")}</div>
+        <div class="slashai-body">${formatPromptWithCommands(text || "")}</div>
+        ${dropdownHTML}
         <div class="slashai-hint"><kbd>Esc</kbd> to cancel</div>
       </div>
     `;
+  }
+
+  function getFilteredCommands(text) {
+    if (!text.includes('/')) return [];
+    const words = text.split(/\s+/);
+    const lastWord = words[words.length - 1];
+    if (!lastWord.startsWith('/')) return [];
+
+    // If just "/", show all commands
+    if (lastWord === '/') {
+      return SLASH_COMMANDS;
+    }
+
+    return SLASH_COMMANDS.filter(cmd =>
+      cmd.command.toLowerCase().startsWith(lastWord.toLowerCase())
+    );
   }
 
   function renderOverlay(text, subtle=false) {
@@ -66,6 +107,8 @@
     state.caretIndex = 0;
     state.mode = null;
     state.ceRoot = null;
+    state.showCommandDropdown = false;
+    state.selectedCommandIndex = 0;
     if (state.bookmarkId) removeBookmark(state.bookmarkId);
     state.bookmarkId = null;
     hideOverlay();
@@ -73,6 +116,35 @@
 
   function escapeHtml(s) {
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function formatPromptWithCommands(text) {
+    if (!text) return '';
+
+    // Split by spaces and process each word
+    const words = text.split(/(\s+)/); // Include whitespace in split
+    return words.map(word => {
+      const trimmedWord = word.trim();
+      // Check if this word is a complete slash command
+      const isValidCommand = SLASH_COMMANDS.some(cmd => cmd.command === trimmedWord);
+
+      if (isValidCommand) {
+        return `<span class="slashai-command">${escapeHtml(word)}</span>`;
+      } else {
+        return escapeHtml(word);
+      }
+    }).join('');
+  }
+
+  function processSlashCommands(text) {
+    return text.replace(/\/date\b/g, () => {
+      const now = new Date();
+      return now.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    });
   }
 
   function positionOverlay() {
@@ -257,8 +329,9 @@
       e.preventDefault();
       e.stopPropagation();
       renderOverlay("Sending…", true);
+      const processedPrompt = processSlashCommands(state.promptBuffer.trim());
       chrome.runtime.sendMessage(
-        { type: "slashai:complete", prompt: state.promptBuffer.trim() },
+        { type: "slashai:complete", prompt: processedPrompt },
         (resp) => {
           if (!resp || !resp.ok) {
             renderOverlay(resp?.error || "Error", true);
@@ -293,10 +366,53 @@
       return;
     }
 
+    // Arrow keys for command dropdown navigation
+    if (state.showCommandDropdown && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+      e.preventDefault();
+      e.stopPropagation();
+      const filteredCommands = getFilteredCommands(state.promptBuffer);
+      if (filteredCommands.length > 0) {
+        if (e.key === "ArrowDown") {
+          state.selectedCommandIndex = (state.selectedCommandIndex + 1) % filteredCommands.length;
+        } else {
+          state.selectedCommandIndex = (state.selectedCommandIndex - 1 + filteredCommands.length) % filteredCommands.length;
+        }
+        renderOverlay(state.promptBuffer);
+      }
+      return;
+    }
+
+    // Tab or Enter to select command from dropdown
+    if (state.showCommandDropdown && (e.key === "Tab" || e.key === "Enter") && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      const filteredCommands = getFilteredCommands(state.promptBuffer);
+      if (filteredCommands.length > 0) {
+        const selectedCommand = filteredCommands[state.selectedCommandIndex];
+        // Replace the partial command with the full command
+        const words = state.promptBuffer.split(/\s+/);
+        words[words.length - 1] = selectedCommand.command;
+        state.promptBuffer = words.join(' ');
+        state.showCommandDropdown = false;
+        state.selectedCommandIndex = 0;
+        renderOverlay(state.promptBuffer);
+      }
+      return;
+    }
+
     if (e.key.length === 1 && !e.altKey && !e.metaKey) {
       e.preventDefault();
       e.stopPropagation();
       state.promptBuffer += e.key;
+
+      // Check if we should show command dropdown
+      const words = state.promptBuffer.split(/\s+/);
+      const lastWord = words[words.length - 1];
+      state.showCommandDropdown = lastWord.startsWith('/');
+      if (!state.showCommandDropdown) {
+        state.selectedCommandIndex = 0;
+      }
+
       renderOverlay(state.promptBuffer);
       return;
     }
