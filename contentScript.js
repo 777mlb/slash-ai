@@ -15,7 +15,8 @@
   };
 
   const SLASH_COMMANDS = [
-    { command: '/date', description: 'Insert current date' }
+    { command: '/date', description: 'Insert current date' },
+    { command: '/time', description: 'Insert current time' }
   ];
 
   // ---------- Utils ----------
@@ -137,14 +138,23 @@
   }
 
   function processSlashCommands(text) {
-    return text.replace(/\/date\b/g, () => {
-      const now = new Date();
-      return now.toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric'
+    return text
+      .replace(/\/date\b/g, () => {
+        const now = new Date();
+        return now.toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      })
+      .replace(/\/time\b/g, () => {
+        const now = new Date();
+        return now.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
       });
-    });
   }
 
   function positionOverlay() {
