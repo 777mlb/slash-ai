@@ -36,6 +36,12 @@
 - Support for different OpenAI models (GPT-4, GPT-4-turbo, etc.)
 - Model selection UI in overlay or options page
 
+#### Notion Support
+- **Rich Text Editor Compatibility**: Full support for Notion's contentEditable implementation
+- Handle Notion's complex DOM structure and block-based editing
+- Proper text insertion that respects Notion's formatting and block boundaries
+- Test across different Notion block types (text, headings, lists, etc.)
+
 #### Text Blaze-Style Shortcuts
 - Non-AI shortcuts for common text expansions
 - Custom shortcuts like `/email` → email signature
@@ -72,8 +78,9 @@
 
 ### Medium Priority
 1. Enhanced visual indicators for shortcuts
-2. Page context integration
-3. Model selection
+2. Notion support
+3. Page context integration
+4. Model selection
 
 ### Future/Research
 1. Conversation mode
