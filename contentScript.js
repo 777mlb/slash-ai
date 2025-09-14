@@ -297,8 +297,61 @@
   }
 
   function insertAtBookmark(id, text) {
+    console.log("Slash AI Debug - insertAtBookmark called with id:", id);
     const span = document.querySelector(`span[data-slashai-bm="${id}"]`);
-    if (!span) return;
+    console.log("Slash AI Debug - Found bookmark span:", span);
+
+    if (!span) {
+      console.log("Slash AI Debug - Bookmark span not found, trying fallback insertion");
+      // Fallback: try to insert at the currently focused element
+      const activeEl = document.activeElement;
+      console.log("Slash AI Debug - Fallback active element:", activeEl);
+
+      if (activeEl && activeEl.isContentEditable) {
+        console.log("Slash AI Debug - Using fallback contentEditable insertion");
+        activeEl.focus();
+        const selection = window.getSelection();
+
+        // Insert at current cursor position rather than end
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents(); // Clear any selection
+
+          // Insert text
+          const textNode = document.createTextNode(text);
+          range.insertNode(textNode);
+
+          // Move cursor after inserted text
+          range.setStartAfter(textNode);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        } else {
+          // Fallback: append to end but avoid extra spacing
+          const lastChild = activeEl.lastChild;
+          const textNode = document.createTextNode(text);
+
+          // If last child is a text node, append directly
+          if (lastChild && lastChild.nodeType === Node.TEXT_NODE) {
+            lastChild.textContent += text;
+          } else {
+            activeEl.appendChild(textNode);
+          }
+
+          // Set cursor after the inserted text
+          const range = document.createRange();
+          range.setStartAfter(textNode);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+
+        // Trigger input event
+        activeEl.dispatchEvent(new Event("input", { bubbles: true }));
+        return;
+      }
+      return;
+    }
 
     const frag = document.createDocumentFragment();
     const lines = String(text).split("\n");
@@ -318,6 +371,12 @@
     sel.addRange(r);
 
     span.remove();
+
+    // Trigger input event for LinkedIn compatibility
+    const contentEditableRoot = span.closest('[contenteditable="true"]');
+    if (contentEditableRoot) {
+      contentEditableRoot.dispatchEvent(new Event("input", { bubbles: true }));
+    }
   }
 
   // ---------- Shared prompt-mode keystrokes ----------
@@ -348,9 +407,15 @@
             setTimeout(resetState, 2000);
             return;
           }
+          console.log("Slash AI Debug - Inserting text:", resp.content);
+          console.log("Slash AI Debug - Mode:", state.mode);
+          console.log("Slash AI Debug - Active element:", state.activeEl);
+
           if (state.mode === "input") {
+            console.log("Slash AI Debug - Using insertAtCaret");
             insertAtCaret(state.activeEl, state.caretIndex, resp.content);
           } else {
+            console.log("Slash AI Debug - Using insertAtBookmark");
             insertAtBookmark(state.bookmarkId, resp.content);
           }
           resetState();
@@ -438,10 +503,37 @@
   function insertAtCaret(el, caretIndex, text) {
     const before = el.value.slice(0, caretIndex);
     const after = el.value.slice(caretIndex);
-    el.value = before + text + after;
+    const newValue = before + text + after;
+
+    // More robust approach for React/LinkedIn compatibility
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLInputElement.prototype,
+      "value"
+    )?.set || Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype,
+      "value"
+    )?.set;
+
+    if (nativeInputValueSetter) {
+      nativeInputValueSetter.call(el, newValue);
+    } else {
+      el.value = newValue;
+    }
+
     const newCaret = caretIndex + text.length;
     el.selectionStart = el.selectionEnd = newCaret;
+
+    // Dispatch multiple events for compatibility
     el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // Add React-specific events for LinkedIn
+    if (el._valueTracker) {
+      el._valueTracker.setValue(before);
+    }
+
+    // Focus the element to ensure LinkedIn recognizes the change
+    el.focus();
   }
 
   // Cancel prompt if user clicks elsewhere or frame blurs
