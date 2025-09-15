@@ -41,12 +41,10 @@
 
 ### Functionality
 
-
 #### Model Selection
 - Allow users to toggle between different AI models
 - Support for different OpenAI models (GPT-4, GPT-4-turbo, etc.)
 - Model selection UI in overlay or options page
-
 
 #### Text Blaze-Style Shortcuts
 - Non-AI shortcuts for common text expansions
@@ -59,7 +57,6 @@
 - Chat interface within the overlay for back-and-forth
 - Final "Insert" button to place refined response
 
-
 #### Team Prompt Sharing
 - **Shared Prompt Libraries**: Company/team-wide prompt collections
 - Cloud sync for team prompts
@@ -70,19 +67,3 @@
 - Rollback capability to previous prompt versions
 - Change history and diff viewing
 - Safe updates without breaking existing workflows
-
-## Priority Levels
-
-### High Priority
-1. Dark mode styling support
-2. Fix Notion overlay positioning
-
-### Medium Priority
-1. Enhanced visual indicators for shortcuts
-2. Model selection
-3. Text Blaze-style shortcuts
-
-### Future/Research
-1. Conversation mode
-2. Team prompt sharing
-3. Prompt versioning features
