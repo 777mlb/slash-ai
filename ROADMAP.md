@@ -4,6 +4,7 @@
 
 ### Context-Aware Prompts
 - **Page Context Integration**: Ability to include page content as background information
+- For example, if a user is using Slash AI in Gmail, we should read the email thread of the page they're on so they can say "finish this email" or "respond to this email" and Slash AI's response will be good
 - Automatically pull relevant context from the current page/selection
 - Toggle option to include/exclude context per prompt
 
@@ -11,6 +12,12 @@
 - **Custom Prompt Library**: User-created reusable prompts
 - Quick access via `/ai /sales-email` syntax
 - Categories and organization for prompt management
+
+### Highlight to Add AI
+- If we come back to the core use case, it's that we want the ability for a team to share system-wide prompts and have those impact how users interact with their content
+- For example, we might have a prompt that checks an email for certain qualities before it goes to customers or a prompt that checks a LinkedIn post for certain grammar qualities before it goes to customers
+- Currently the process is to write something, copy it into ChatGPT, remember the prompt, get a result and copy it back into the page
+- Instead, what if the user writes in their tool of choice (e.g. Gmail), then highlights the text, selects a prompt, it provides feedback and if you like it will override the text?
 
 ## 🐛 Known Bugs
 
