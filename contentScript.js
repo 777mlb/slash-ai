@@ -11,7 +11,8 @@
     ceRoot: null,        // contentEditable root
     bookmarkId: null,    // id for insertion point in CE
     showCommandDropdown: false,
-    selectedCommandIndex: 0
+    selectedCommandIndex: 0,
+    includeContext: true
   };
 
   const SLASH_COMMANDS = [
@@ -70,6 +71,11 @@
       <div class="slashai-card">
         <div class="slashai-title">${title}</div>
         <div class="slashai-body">${formatPromptWithCommands(text || "")}</div>
+        <div class="slashai-ctxrow">
+          <label class="slashai-ctxlabel">
+            <input type="checkbox" id="slashai-ctx-toggle" ${state.includeContext ? 'checked' : ''} /> Include selection/context
+          </label>
+        </div>
         ${dropdownHTML}
         <div class="slashai-hint"><kbd>Esc</kbd> to cancel</div>
       </div>
@@ -97,6 +103,19 @@
     d.innerHTML = overlayHTML(text, subtle);
     positionOverlay();
     d.style.display = "block";
+
+    // Wire up context toggle
+    const cb = d.querySelector('#slashai-ctx-toggle');
+    if (cb) {
+      cb.addEventListener('click', (ev) => {
+        // Keep prompt open and avoid page interactions
+        ev.stopPropagation();
+      }, true);
+      cb.addEventListener('change', (ev) => {
+        state.includeContext = !!cb.checked;
+        ev.stopPropagation();
+      }, true);
+    }
   }
 
   function hideOverlay() { if (state.overlay) state.overlay.style.display = "none"; }
@@ -399,8 +418,15 @@
       e.stopPropagation();
       renderOverlay("Sending…", true);
       const processedPrompt = processSlashCommands(state.promptBuffer.trim());
+
+      // Build optional context string
+      const ctx = collectContext();
+      const finalPrompt = ctx
+        ? `Context (do not quote verbatim; use only as background):\n${ctx}\n\nTask: ${processedPrompt}`
+        : processedPrompt;
+
       chrome.runtime.sendMessage(
-        { type: "slashai:complete", prompt: processedPrompt },
+        { type: "slashai:complete", prompt: finalPrompt },
         (resp) => {
           if (!resp || !resp.ok) {
             renderOverlay(resp?.error || "Error", true);
@@ -536,7 +562,53 @@
     el.focus();
   }
 
-  // Cancel prompt if user clicks elsewhere or frame blurs
-  document.addEventListener("mousedown", () => { if (state.inPrompt) resetState(); }, true);
+  // Cancel prompt if user clicks elsewhere (but keep overlay interactive) or frame blurs
+  document.addEventListener("mousedown", (e) => {
+    if (!state.inPrompt) return;
+    const d = state.overlay;
+    if (d && d.contains(e.target)) {
+      // Keep prompt open; block page from stealing focus
+      e.stopPropagation();
+      return;
+    }
+    resetState();
+  }, true);
   window.addEventListener("blur", () => { if (state.inPrompt) resetState(); });
+
+  // -------- Context collection --------
+  function collectContext() {
+    try {
+      if (!state.includeContext) return "";
+      if (state.mode === "input") {
+        const el = state.activeEl;
+        if (!el) return "";
+        const hasSel = typeof el.selectionStart === 'number' && el.selectionStart !== el.selectionEnd;
+        if (hasSel) {
+          const s = (el.value || '').slice(el.selectionStart, el.selectionEnd).trim();
+          if (s) return truncate(s, 2000);
+        }
+        const before = (el.value || '').slice(0, state.caretIndex);
+        const recent = before.slice(-500);
+        return recent.trim();
+      }
+      if (state.mode === "ce") {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount && !sel.isCollapsed) {
+          const s = sel.toString().trim();
+          if (s) return truncate(s, 2000);
+        }
+        const before = getTextBeforeCaret(state.ceRoot) || "";
+        const recent = before.slice(-500);
+        return recent.trim();
+      }
+      return "";
+    } catch {
+      return "";
+    }
+  }
+
+  function truncate(str, max) {
+    if (!str) return "";
+    return str.length > max ? str.slice(0, max) : str;
+  }
 })();
